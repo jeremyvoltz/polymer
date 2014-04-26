@@ -24,6 +24,7 @@ class Polymer(object):
         self.max_action = None
         self.logger = logger
 
+
     def log(self, s):
         """Log a message if a logger has been initialized"""
         if self.logger:
@@ -47,7 +48,8 @@ class Polymer(object):
             new_triangle_col = []
             old_triangle_col = triangle[i - 1]
 
-            new_choices_col = []
+            if make_path:
+                new_choices_col = []
 
             for j in xrange(n - i, n + i + 1):
                 bestparent = max([(old_triangle_col[j + k], k)
@@ -56,14 +58,16 @@ class Polymer(object):
                     new_choices_col.append(bestparent[1])
                 new_triangle_col.append(bestparent[0] + env[i][j])
 
-            choices.append(
-                array('i', [0] * (n - i) + new_choices_col + [0] * (n - i)))
+            if make_path:
+                choices.append(
+                    array('i', [0] * (n - i) + new_choices_col + [0] * (n - i)))
             triangle.append(
                 array('f', [-n] * (n - i) + new_triangle_col + [-n] * (n - i)))
 
         self.log("Actions and choices computed.")
         self.action_field = triangle
-        self.choices = choices
+        if make_path:
+            self.choices = choices
         a, e = max([(triangle[n][x], x) for x in xrange(2 * n + 1)])
         self.max_action = a
         self.endpoint = e - n
@@ -134,25 +138,25 @@ class Polymer(object):
     #             stab = False
     #     return stab, disagreements
 
-    def derivative(self):
-        """Return a list of secants of the best action at endpoints near 0,
-         starting near 0 and moving outward to a distance of the size of triangle to the 2/3 power"""
-        N = len(self.action_field) - 1
-        secants = [(self.action_field[N][i + N] - self.action_field[N][N]) / float(i)
-                   for i in xrange(1, int(math.floor(math.pow(N, 2 / float(3)))))]
-        return secants
+#     def derivative(self):
+#         """Return a list of secants of the best action at endpoints near 0,
+#          starting near 0 and moving outward to a distance of the size of triangle to the 2/3 power"""
+#         N = len(self.action_field) - 1
+#         secants = [(self.action_field[N][i + N] - self.action_field[N][N]) / float(i)
+#                    for i in xrange(1, int(math.floor(math.pow(N, 2 / float(3)))))]
+#         return secants
 
-    def rolling_averages(self, values, gap):
-        """Return a list of the averages from values, where the first entry is the average of the first gap values, 
-        the second entry is the average of the first 2*gap values, and so on """
-        N = len(values)
-        sum = 0
-        averages = []
-        for i in xrange(N):
-            sum += values[i]
-            if (i + 1) % gap == 0:
-                averages.append(sum / float(i + 1))
-        return averages
+#     def rolling_averages(self, values, gap):
+#         """Return a list of the averages from values, where the first entry is the average of the first gap values, 
+#         the second entry is the average of the first 2*gap values, and so on """
+#         N = len(values)
+#         sum = 0
+#         averages = []
+#         for i in xrange(N):
+#             sum += values[i]
+#             if (i + 1) % gap == 0:
+#                 averages.append(sum / float(i + 1))
+#         return averages
 
     def pinned_path(self, site, n=0):
         """Return the best path determined by triangle and choices, ending at site, of length n"""
@@ -168,146 +172,108 @@ class Polymer(object):
             path[n - i - 1] = path[n - i] + self.choices[n - i][path[n - i] + N]
         return path, self.action_field[n][end]
 
-    def linearity((triangle, choices), step):
-        """Return """
-        if len(choices) == 0:
-            Exception("Enable choice array in triangle method")
-        N = len(triangle) - 1
-        return [(i, triangle[i][int(math.floor(float(i) / 2)) + N],
-                 last_edge_time(path((triangle, choices), i)[0])[0]) for i in range(step, N + 1, step)]
+#     def linearity((triangle, choices), step):
+#         """Return """
+#         if len(choices) == 0:
+#             Exception("Enable choice array in triangle method")
+#         N = len(triangle) - 1
+#         return [(i, triangle[i][int(math.floor(float(i) / 2)) + N],
+#                  last_edge_time(path((triangle, choices), i)[0])[0]) for i in range(step, N + 1, step)]
 
-    def last_edge_time(self):
-        n = len(self.max_path) - 1
-        time = n - 1
-        while self.max_path[time] == self.max_path[n]:
-            time -= 1
-            if time == 0:
-                break
-        final_edge = min(self.max_path[time], self.max_path[n])
-        if abs(float(final_edge)) == 0:
-            return 1
-        else:
-            final_time = self.max_path.index(final_edge)
-            return final_time / abs(float(final_edge)), final_edge, final_time
+#     def last_edge_time(self):
+#         n = len(self.max_path) - 1
+#         time = n - 1
+#         while self.max_path[time] == self.max_path[n]:
+#             time -= 1
+#             if time == 0:
+#                 break
+#         final_edge = min(self.max_path[time], self.max_path[n])
+#         if abs(float(final_edge)) == 0:
+#             return 1
+#         else:
+#             final_time = self.max_path.index(final_edge)
+#             return final_time / abs(float(final_edge)), final_edge, final_time
 
-    def traps(path, env):
-        n = len(env) - 1
-        count = 0
-        for i in range(len(path)):
-            m = path[i] + n
-            if env[i][m] < 0:
-                count += 1
-        return count
+#     def traps(path, env):
+#         n = len(env) - 1
+#         count = 0
+#         for i in range(len(path)):
+#             m = path[i] + n
+#             if env[i][m] < 0:
+#                 count += 1
+#         return count
 
-    def occupation(path, logger):
-        n = len(path) - 1
-        occupation = [0 for _ in range(max(path) + n + 1)]
-        for i in range(n):
-            occupation[path[i] + n] += 1
+#     def occupation(path, logger):
+#         n = len(path) - 1
+#         occupation = [0 for _ in range(max(path) + n + 1)]
+#         for i in range(n):
+#             occupation[path[i] + n] += 1
 
-        siterange = len(occupation)
+#         siterange = len(occupation)
 
-        negsiterange = 0
-        while occupation[negsiterange] == 0:
-            negsiterange += 1
+#         negsiterange = 0
+#         while occupation[negsiterange] == 0:
+#             negsiterange += 1
 
-        logger.info("Previous record occupation time: " +
-                    str(max(occupation[negsiterange + 5: siterange - 5])))
-        return zip(range(-n, siterange), occupation)
+#         logger.info("Previous record occupation time: " +
+#                     str(max(occupation[negsiterange + 5: siterange - 5])))
+#         return zip(range(-n, siterange), occupation)
 
-    def record_locations(grid):
-        n = len(grid) - 1
-        recs = []
-        min = 1
-        for i in range(n - 1):
-            if 2 - abs(grid[0][i + n] - grid[0][i + 1 + n]) < min:
-                recs.append((i, 2 - abs(grid[0][i + n] - grid[0][i + 1 + n])))
-                min = 2 - abs(grid[0][i + n] - grid[0][i + 1 + n])
-            if 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n]) < min:
-                recs.append(
-                    (-i, 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n])))
-                min = 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n])
-        return recs
+#     def record_locations(grid):
+#         n = len(grid) - 1
+#         recs = []
+#         min = 1
+#         for i in range(n - 1):
+#             if 2 - abs(grid[0][i + n] - grid[0][i + 1 + n]) < min:
+#                 recs.append((i, 2 - abs(grid[0][i + n] - grid[0][i + 1 + n])))
+#                 min = 2 - abs(grid[0][i + n] - grid[0][i + 1 + n])
+#             if 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n]) < min:
+#                 recs.append(
+#                     (-i, 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n])))
+#                 min = 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n])
+#         return recs
 
-    def discrepancies(occupation, env):
-        n = len(env) - 1
-        discrepancies = []
-        for j in range(len(occupation) - 1):
-            occ1 = occupation[j]
-            occ2 = occupation[j + 1]
-            if occ1[1] > 1 and occ2[1] > 1:
-                disc = 2 - abs(env[0][n + occ1[0]] - env[0][n + occ2[0]])
-                occ = occ1[1] + occ2[1]
-                discrepancies.append((occ1[0], disc, occ, occ * pow(disc, 2)))
-        return discrepancies
+#     def discrepancies(occupation, env):
+#         n = len(env) - 1
+#         discrepancies = []
+#         for j in range(len(occupation) - 1):
+#             occ1 = occupation[j]
+#             occ2 = occupation[j + 1]
+#             if occ1[1] > 1 and occ2[1] > 1:
+#                 disc = 2 - abs(env[0][n + occ1[0]] - env[0][n + occ2[0]])
+#                 occ = occ1[1] + occ2[1]
+#                 discrepancies.append((occ1[0], disc, occ, occ * pow(disc, 2)))
+#         return discrepancies
 
-    def constant((grid, n)):
-        triang, choices = triangle((grid, n))
-        gamma = path((triang, choices))
-        ln = last_edge_time(gamma[0])[1]
-        n = len(triang)
-        dn = 2 - abs(grid[0][n + ln] - grid[0][n + ln + 1])
-        return (gamma[2] - n + dn * n) / float(ln)
+#     def constant((grid, n)):
+#         triang, choices = triangle((grid, n))
+#         gamma = path((triang, choices))
+#         ln = last_edge_time(gamma[0])[1]
+#         n = len(triang)
+#         dn = 2 - abs(grid[0][n + ln] - grid[0][n + ln + 1])
+#         return (gamma[2] - n + dn * n) / float(ln)
 
-    def functional(omega, const):
-        n = (len(omega) - 1) / 2
-        functs = [(const * abs(i - n) / pow(n, 2 / float(3)) - (1 - (abs(omega[i] - omega[i + 1]) / 2)) * pow(n, 1 / float(3)), i - n)
-                  for i in range(len(omega) - 1)]
-        return max(functs)
+#     def functional(omega, const):
+#         n = (len(omega) - 1) / 2
+#         functs = [(const * abs(i - n) / pow(n, 2 / float(3)) - (1 - (abs(omega[i] - omega[i + 1]) / 2)) * pow(n, 1 / float(3)), i - n)
+#                   for i in range(len(omega) - 1)]
+#         return max(functs)
 
-    def functional_range(omega, end):
-        step = 0.1
-        lower_bound = -10
-        upper_bound = 0
-        min = upper_bound
-        max = lower_bound
-        match_end = []
-        for c in (lower_bound + i * step for i in range(int((upper_bound - lower_bound) / step))):
-            if functional(omega, c)[1] == end:
-                match_end.append(1)
-            else:
-                match_end.append(0)
-        try:
-            min = lower_bound + match_end.index(1) * step
-            max = upper_bound - step * (match_end[::-1].index(1) + 1)
-        except:
-            pass
-        return min, max
-
-
-    # size = 5000
-    # env, n = grid(size)
-    # t, c = triangle((env, size))
-    # worst = 0
-    # print record_locations(env)
-    # for d, r in record_locations(env):
-    #     if abs(t[size][d-size] - t[size][d+1-size]) > worst:
-    #         worst = abs(t[size][d-size] - t[size][d+1-size])
-
-    # print worst
-
-    # worst = 0
-    # for m in range(len(t[size])-1):
-    #     if abs(t[size][m] - t[size][m+1]) > worst:
-    #         worst = abs(t[size][m] - t[size][m+1])
-    # print worst
-
-
-p = Polymer(100)
-p.make_environment()
-p.compute_actions()
-print p.max_action
-
-# omega = grid(100)[0][0]
-# print functional(omega, -1)
-
-# print max(triangle(nondegengrid(5000))[0][5000])
-
-# for j in range(10):
-#     n=5000
-#     env1 = grid(n)[0]
-#     env2 = [ array('f', [-1*x for x in j]) for j in env1]
-#     print max(triangle((env1, n))[0][n]), max(triangle((env2, n))[0][n])
-
-# env = grid(1000, omega = array('f', [random.choice([1,-1,0.5, -.5]) for _ in range(2001)]))
-# print max(triangle(env)[0][1000])
+#     def functional_range(omega, end):
+#         step = 0.1
+#         lower_bound = -10
+#         upper_bound = 0
+#         min = upper_bound
+#         max = lower_bound
+#         match_end = []
+#         for c in (lower_bound + i * step for i in range(int((upper_bound - lower_bound) / step))):
+#             if functional(omega, c)[1] == end:
+#                 match_end.append(1)
+#             else:
+#                 match_end.append(0)
+#         try:
+#             min = lower_bound + match_end.index(1) * step
+#             max = upper_bound - step * (match_end[::-1].index(1) + 1)
+#         except:
+#             pass
+#         return min, max

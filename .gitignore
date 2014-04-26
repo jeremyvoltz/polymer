@@ -1,0 +1,10 @@
+
+*.pyc
+
+*.log
+
+email.txt
+
+*.p
+
+*.pdf
