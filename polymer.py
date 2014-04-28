@@ -114,13 +114,12 @@ class Polymer(object):
             Exception("Enable make_path in triangle method")
 
         end = argmax(self.action_field[n]) - N
-        path = [] * (n + 1)
+        path = [0] * (n + 1)
         path[n] = end
         for i in xrange(n):
             path[n - i - 1] = path[n - i] + \
                 self.choices[n - i][path[n - i] + N]
         if n == N:
-            self.max_action = max(self.action_field[self.endpoint + N])
             self.max_path = path
         return path
 
@@ -165,12 +164,11 @@ class Polymer(object):
         N = self.size
         if n == 0 or n > N:
             n = N
-        path = [None for _ in xrange(n + 1)]
-        end = site + N
-        path[n] = end
+        path = [0]*(n + 1)
+        path[n] = site
         for i in xrange(n):
             path[n - i - 1] = path[n - i] + self.choices[n - i][path[n - i] + N]
-        return path, self.action_field[n][end]
+        return path, self.action_field[n][site+N]
 
 #     def linearity((triangle, choices), step):
 #         """Return """
@@ -203,21 +201,21 @@ class Polymer(object):
 #                 count += 1
 #         return count
 
-#     def occupation(path, logger):
-#         n = len(path) - 1
-#         occupation = [0 for _ in range(max(path) + n + 1)]
-#         for i in range(n):
-#             occupation[path[i] + n] += 1
+    def occupation(path, logger):
+        n = len(path) - 1
+        occupation = [0 for _ in range(max(path) + n + 1)]
+        for i in range(n):
+            occupation[path[i] + n] += 1
 
-#         siterange = len(occupation)
+        siterange = len(occupation)
 
-#         negsiterange = 0
-#         while occupation[negsiterange] == 0:
-#             negsiterange += 1
+        negsiterange = 0
+        while occupation[negsiterange] == 0:
+            negsiterange += 1
 
-#         logger.info("Previous record occupation time: " +
-#                     str(max(occupation[negsiterange + 5: siterange - 5])))
-#         return zip(range(-n, siterange), occupation)
+        logger.info("Previous record occupation time: " +
+                    str(max(occupation[negsiterange + 5: siterange - 5])))
+        return zip(range(-n, siterange), occupation)
 
 #     def record_locations(grid):
 #         n = len(grid) - 1

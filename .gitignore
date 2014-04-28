@@ -8,3 +8,7 @@ email.txt
 *.p
 
 *.pdf
+
+plot_pickle.py
+
+counter.py
