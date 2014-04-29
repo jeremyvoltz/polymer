@@ -157,12 +157,15 @@ class Polymer(object):
 #                 averages.append(sum / float(i + 1))
 #         return averages
 
-    def pinned_path(self, site, n=0):
+    def pinned_path(self, site, n = None):
         """Return the best path determined by triangle and choices, ending at site, of length n"""
         if len(self.choices) == 0:
             Exception("Enable make_path in triangle method")
         N = self.size
-        if n == 0 or n > N:
+        if n is None:
+            n = N
+        if n > N: 
+            self.log("length exceeds polymer size in pinned path class method, defaulting to max size")
             n = N
         path = [0]*(n + 1)
         path[n] = site
@@ -275,3 +278,29 @@ class Polymer(object):
 #         except:
 #             pass
 #         return min, max
+
+def test_pinned_path(n):
+    poly = Polymer(n)
+    poly.make_environment()
+    poly.compute_actions()
+    for i in range(n+1):
+        j = random.randint(-i,i)
+        try:
+            poly.pinned_path(j, i)
+        except IndexError:
+            print "failure at ", j, i
+
+def test_path(n):
+    poly = Polymer(n)
+    poly.make_environment()
+    poly.compute_actions()
+    for i in range(n+1):
+        try:
+            poly.compute_path(i)
+        except IndexError:
+            print "failure at ", i
+    
+
+if __name__ == '__main__':
+    test_pinned_path(5000)
+    test_path(5000)
