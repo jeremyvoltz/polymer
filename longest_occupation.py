@@ -91,6 +91,7 @@ def runtrials(trials, size):
     seq_two = np.mean(array_two, axis=0)
 
     avg_critical = sum(critical)/len(critical)
+    var_critical = variance(critical, avg_critical)
 
     
     email_message = ("Program: Sequence of longest occupation divided by size" +'\n'
@@ -101,10 +102,12 @@ def runtrials(trials, size):
                      "Number of Trials: " + str(trials) + '\n'
                      "Sequence avg for alpha_one: " + str(seq_one) +'\n'
                      "Sequence avg for alpha_two: " + str(seq_two) +'\n'
-                     "Critical alpha: " + str(avg_critical) )
+                     "Critical alpha and variance: " + str(avg_critical) + ', ' + str(var_critical) )
 
     logger.info(email_message)
 
+def variance(l, avg):
+    return sum([(e - avg) ** 2 for e in l])
 
 if __name__ == '__main__':
     try:
