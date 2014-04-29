@@ -29,17 +29,20 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-alpha_one = 0.1
-alpha_two = 0.9
+alpha_one = 0.5
+alpha_two = 0.8
 
-TEST_INTERVALS = 10
+TEST_INTERVALS = 5
 
 seq_one = []
 seq_two = []
+critical = []
 
-def most_common_count(lst):
+def most_common(lst):
+    """return a tuple (most_common_element, count_of_element_in_list)
+    """
     data = Counter(lst)
-    return data.most_common(1)[0][1]
+    return data.most_common(1)[0]
 
 
 def trial(size):
@@ -54,9 +57,12 @@ def trial(size):
     for i in range(1, TEST_INTERVALS + 1):
         j = i*size / TEST_INTERVALS
         p_1, a_1 = polymer.pinned_path(int(math.floor(alpha_one * j)), j)
-        s_one.append(most_common_count(p_1) / float(j))
+        e_1, c_1 = most_common(p_1)
+        s_one.append(c_1 / float(j))
         p_2, a_2 = polymer.pinned_path(int(math.floor(alpha_two * j)), j)
-        s_two.append(most_common_count(p_2) / float(j))
+        s_two.append(most_common(p_2)[1] / float(j))
+
+    critical.append( float(abs(e_1)) / p_1.index(e_1) )
 
     seq_one.append(s_one)
     seq_two.append(s_two)
@@ -66,6 +72,7 @@ def trial(size):
     # plt.plot(range(size+1), p_1)
     # plt.savefig('./plots/pinned_path:'+str(size)+'-'+str(datetime.now())+'.pdf')
     # return None
+
 
 def runtrials(trials, size):
     startTime = datetime.now()
@@ -83,6 +90,8 @@ def runtrials(trials, size):
     seq_one = np.mean(array_one, axis=0)
     seq_two = np.mean(array_two, axis=0)
 
+    avg_critical = sum(critical)/len(critical)
+
     
     email_message = ("Program: Sequence of longest occupation divided by size" +'\n'
                      "Start: " + str(startTime) + '\n'
@@ -91,7 +100,8 @@ def runtrials(trials, size):
                      "Size: " + str(size) + '\n'
                      "Number of Trials: " + str(trials) + '\n'
                      "Sequence avg for alpha_one: " + str(seq_one) +'\n'
-                     "Sequence avg for alpha_two: " + str(seq_two) +'\n')
+                     "Sequence avg for alpha_two: " + str(seq_two) +'\n'
+                     "Critical alpha: " + str(avg_critical) )
 
     logger.info(email_message)
 
