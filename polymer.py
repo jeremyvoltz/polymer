@@ -80,6 +80,9 @@ class Polymer(object):
         if not self.spacevar:
             omega = array('f', [random.uniform(-1, 1)
                           for _ in xrange(2 * n + 1)])
+            self.spacevar = omega
+        else:
+            omega = self.spacevar
 
         if not self.timevar and time_distr == "uniform":
             self.timevar = [random.uniform(-1, 1) for _ in xrange(n + 1)]
@@ -101,7 +104,6 @@ class Polymer(object):
             else:
                 self.environment[i] = array(
                     'f', [self.timevar[i] * x for x in omega])
-        self.spacevar = omega
         self.log("Environment completed.")
 
     def compute_path(self, n=None):
