@@ -301,7 +301,7 @@ def test_path(n):
             poly.compute_path(i)
         except IndexError:
             print "failure at ", i
-    
+
 
 if __name__ == '__main__':
     test_pinned_path(5000)
