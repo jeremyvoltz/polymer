@@ -287,3 +287,13 @@ class Polymer(object):
 #         except:
 #             pass
 #         return min, max
+
+    def action_range(self, a, b):
+        n = self.size
+        if not self.max_path:
+            self.compute_path()
+        if a > 0:
+            return self.action_field[b][self.max_path[b]+n] - self.action_field[a-1][self.max_path[a-1]+n]
+        else: 
+            return self.action_field[b][self.max_path[b]+n]
+

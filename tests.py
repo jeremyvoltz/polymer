@@ -26,9 +26,15 @@ def test__path(n):
         except IndexError:
             print "failure at ", i
 
+
 class PolymerTests(unittest.TestCase):
 
-    pass
+    def test_action(self):
+        poly = Polymer(1000)
+        poly.make_environment()
+        poly.compute_actions()
+        poly.compute_path()
+        self.assertEqual(poly.action_range(1, 1000)+poly.environment[0][1000], poly.max_action)
 
 def main():
     unittest.main()
