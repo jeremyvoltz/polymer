@@ -18,6 +18,7 @@ class Polymer(object):
         self.spacevar = []
         self.timevar = []
         self.environment = [[] * (2 * n + 1)] * (n + 1)
+        self.records = []
         self.choices = []
         self.max_path = []
         self.endpoint = None
@@ -30,10 +31,12 @@ class Polymer(object):
         if self.logger:
             self.logger.info(s)
 
+
     def compute_actions(self, make_path=True):
-        """Generate a triangle of best actions to each point in environment, along
-         with the choices made to obtain the best action.  This is by far the most 
-         computationally challenging algorithm, and can require a large amount of memory."""
+        """Generate a triangle of best actions to each point in environment,
+        along with the choices made to obtain the best action.
+        This is by far the most computationally challenging algorithm,
+        and can require a large amount of memory."""
 
         n = self.size
         env = self.environment
@@ -72,8 +75,9 @@ class Polymer(object):
         self.max_action = a
         self.endpoint = e - n
 
-    def make_environment(self, time_distr="bernoulli"):
-        """Generate an environment grid of size n x (2n+1), 
+
+    def make_environment(self, time_distr = "bernoulli"):
+        """Generate an environment grid of size n x (2n+1),
         shifted up by n (so the origin is at (0,n)). """
 
         n = self.size
@@ -160,7 +164,8 @@ class Polymer(object):
 #         return averages
 
     def pinned_path(self, site, n = None):
-        """Return the best path determined by triangle and choices, ending at site, of length n"""
+        """Return the best path determined by triangle and choices,
+        ending at site, of length n"""
         if len(self.choices) == 0:
             Exception("Enable make_path in triangle method")
         N = self.size
@@ -206,7 +211,7 @@ class Polymer(object):
 #                 count += 1
 #         return count
 
-    def occupation(path, logger):
+    def occupation(path):
         n = len(path) - 1
         occupation = [0 for _ in range(max(path) + n + 1)]
         for i in range(n):
@@ -218,23 +223,25 @@ class Polymer(object):
         while occupation[negsiterange] == 0:
             negsiterange += 1
 
-        logger.info("Previous record occupation time: " +
+        self.log("Previous record occupation time: " +
                     str(max(occupation[negsiterange + 5: siterange - 5])))
         return zip(range(-n, siterange), occupation)
 
-#     def record_locations(grid):
-#         n = len(grid) - 1
-#         recs = []
-#         min = 1
-#         for i in range(n - 1):
-#             if 2 - abs(grid[0][i + n] - grid[0][i + 1 + n]) < min:
-#                 recs.append((i, 2 - abs(grid[0][i + n] - grid[0][i + 1 + n])))
-#                 min = 2 - abs(grid[0][i + n] - grid[0][i + 1 + n])
-#             if 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n]) < min:
-#                 recs.append(
-#                     (-i, 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n])))
-#                 min = 2 - abs(grid[0][-i + n] - grid[0][-i + 1 + n])
-#         return recs
+
+    def compute_record_locations(self):
+        n = self.size
+        recs = []
+        min = 1
+        for i in range(n - 1):
+            if 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n]) < min:
+                recs.append((i, 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n])))
+                min = 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n])
+            if 2 - abs(self.environment[0][-i + n] - self.environment[0][-i + 1 + n]) < min:
+                recs.append(
+                    (-i, 2 - abs(self.environment[0][-i + n] - self.environment[0][-i + 1 + n])))
+                min = 2 - abs(self.environment[0][-i + n] - self.environment[0][-i + 1 + n])
+        self.records = recs
+        return recs
 
 #     def discrepancies(occupation, env):
 #         n = len(env) - 1
@@ -280,29 +287,3 @@ class Polymer(object):
 #         except:
 #             pass
 #         return min, max
-
-def test_pinned_path(n):
-    poly = Polymer(n)
-    poly.make_environment()
-    poly.compute_actions()
-    for i in range(n+1):
-        j = random.randint(-i,i)
-        try:
-            poly.pinned_path(j, i)
-        except IndexError:
-            print "failure at ", j, i
-
-def test_path(n):
-    poly = Polymer(n)
-    poly.make_environment()
-    poly.compute_actions()
-    for i in range(n+1):
-        try:
-            poly.compute_path(i)
-        except IndexError:
-            print "failure at ", i
-
-
-if __name__ == '__main__':
-    test_pinned_path(5000)
-    test_path(5000)
