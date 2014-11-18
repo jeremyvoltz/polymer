@@ -125,7 +125,7 @@ def trial(pol, size, j):
     # a = max( [ ( pol.action_field[i][size+path[-1]] - i, i ) for i in range(size) ] )[1]
     # logger.info("Tau = %s, Maximizing arrival = %s", tau, a )
 
-    return {"tau": tau, "end": end, "discrepancy": discr, 'action': pol.max_action,
+    return {"tau": tau, "end": end, "discrepancy": discr, 'action': pol.action_range(0,tau),
             "missed_sign": missed_sign, "bad_spots": bad_spots, "records": records}
 
     # return tau/float(abs(path[-1])), pol.action_range(0, tau), missed_sign, bad_spots
@@ -156,7 +156,7 @@ def runtrials(trials, size):
             final_results[key].append(results[key])
 
     final_results['taus_over_ends'] = [t/abs(float(e)) for t,e in zip(final_results['tau'],final_results['end'])]
-    final_results['taus_over_discrepancies_squared'] = [t*pow(d,-2) for t,d in 
+    final_results['taus_times_discrepancies_squared'] = [t*pow(d,2) for t,d in 
                                           zip(final_results['tau'],final_results['discrepancy'])]
 
         # taus.append(t)
@@ -172,9 +172,9 @@ def runtrials(trials, size):
 
     final_results['avg_tau_over_end'] = average(final_results['taus_over_ends'])
     final_results['var_tau_over_end'] = variance(final_results['taus_over_ends'], final_results['avg_tau_over_end'])
-    final_results['avg_tau_over_discrepancy_squared'] = average(final_results['taus_over_discrepancies_squared'])
-    final_results['var_tau_over_discrepancy_squared'] = \
-    variance(final_results['taus_over_discrepancies_squared'], final_results['avg_tau_over_discrepancy_squared'])
+    final_results['avg_tau_times_discrepancy_squared'] = average(final_results['taus_times_discrepancies_squared'])
+    final_results['var_tau_times_discrepancy_squared'] = \
+    variance(final_results['taus_times_discrepancies_squared'], final_results['avg_tau_times_discrepancy_squared'])
     final_results['avg_action'] = average(final_results['action'])
     final_results['var_action'] = variance(final_results['action'], final_results['avg_action'])
 
@@ -183,17 +183,21 @@ def runtrials(trials, size):
     # avg_action = average(actions)
     # var_action = variance(actions, avg_action)
 
+    final_results['discrepancy'] = most_common(final_results['discrepancy'])
+    final_results['end'] = most_common(final_results['end'])
+
     email_message = ("Program: Variance of taus up to ending edge" +'\n' 
                      "Start: " + str(startTime) + '\n' 
                      "Finish: " + str(datetime.now()) + '\n' 
                      "Runtime: " + str(datetime.now() - startTime) + '\n' 
                      "Size: " + str(size) + '\n' 
                      "Number of Trials: " + str(trials) + '\n' 
-                     "Endpoints: {end}" + '\n'
+                     "Endpoint, count: {end}" + '\n'
+                     "Discrepancies, count: {discrepancy}" + '\n'
                      "Avg for tau over end:  {avg_tau_over_end}" +'\n' 
                      "variance for tau over end:  {var_tau_over_end}" + '\n' 
-                     "Avg for tau over discrepancy squared:  {avg_tau_over_discrepancy_squared}" +'\n' 
-                     "variance for tau over discrepancy squared:  {var_tau_over_discrepancy_squared}" + '\n' 
+                     "Avg for tau times discrepancy squared:  {avg_tau_times_discrepancy_squared}" +'\n' 
+                     "variance for tau times discrepancy squared:  {var_tau_times_discrepancy_squared}" + '\n' 
                      "Avg for actions:  {avg_action}" + '\n'
                      "variance for actions:  {var_action}" + '\n'
                      "missed_signs:  {missed_sign}" + '\n'
@@ -201,27 +205,12 @@ def runtrials(trials, size):
                      # "Bad sites: " + str(bad_spots)
                      ).format(**final_results)
 
-    # email_message = ("Program: Variance of taus up to ending edge" +'\n' 
-    #                  "Start: " + str(startTime) + '\n' 
-    #                  "Finish: " + str(datetime.now()) + '\n' 
-    #                  "Runtime: " + str(datetime.now() - startTime) + '\n' 
-    #                  "Size: " + str(size) + '\n' 
-    #                  "Number of Trials: " + str(trials) + '\n' 
-    #                  "Avg for taus: " + str(avg_tau) +'\n' 
-    #                  "variance for taus: " + str(var_tau) + '\n' 
-    #                  "Avg for actions: " + str(avg_action) + '\n'
-    #                  "variance for actions: " + str(var_action) + '\n'
-    #                  "missed_signs: " + str(missed_signs) + '\n'
-    #                  ""
-    #                  # "Bad sites: " + str(bad_spots)
-    #                  )
-
     logger.info(email_message)
     email(email_message)
     return results
 
 def email(msg):
-    recipient_email = 'jeremyvoltz@gmail.com'
+    recipient_email = 'jeremy@jeremyvoltz.com'
     basedir = os.path.abspath(os.path.dirname(__file__))
     with open('email.txt', 'w') as f:
         f.write(msg)
