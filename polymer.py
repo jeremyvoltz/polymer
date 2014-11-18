@@ -22,6 +22,7 @@ class Polymer(object):
         self.choices = []
         self.max_path = []
         self.endpoint = None
+        self.tau = None
         self.max_action = None
         self.logger = logger
 
@@ -228,12 +229,12 @@ class Polymer(object):
         return zip(range(-n, siterange), occupation)
 
 
-    def compute_record_locations(self):
+    def compute_record_locations(self): #use discrepancy method
         n = self.size
         recs = []
         min = 1
         for i in range(n - 1):
-            if 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n]) < min:
+            if 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n]) < min: 
                 recs.append((i, 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n])))
                 min = 2 - abs(self.environment[0][i + n] - self.environment[0][i + 1 + n])
             if 2 - abs(self.environment[0][-i + n] - self.environment[0][-i + 1 + n]) < min:
@@ -296,4 +297,44 @@ class Polymer(object):
             return self.action_field[b][self.max_path[b]+n] - self.action_field[a-1][self.max_path[a-1]+n]
         else: 
             return self.action_field[b][self.max_path[b]+n]
+
+
+    def compute_endpoint(self, path = None): #ugly verification logic... can I clean this?
+        if not path and self.max_path: 
+            path = self.max_path
+        elif not self.max_path:
+            path = self.compute_path()
+
+        n = len(path)-1
+        for i in range(n, 0, -1):
+            if path[i] != path[n]:
+                break
+        endpoint = min(path[i], path[n])
+        if path is self.max_path:
+            self.endpoint = endpoint
+        return endpoint
+
+
+    def compute_tau(self, path = None): #ugly verification logic... can I clean this?
+        endpoint = None
+        if path:
+            endpoint = self.compute_endpoint(path)
+        if not path and not self.max_path: #path hasn't been computed
+            endpoint = self.compute_endpoint() #this will make self.max_path
+        if not path: #now self.max_path has been computed either way, but maybe not endpoint
+            path = self.max_path
+        if not endpoint and not self.endpoint:
+            endpoint = self.compute_endpoint()
+        else:
+            endpoint = self.endpoint
+
+        tau = path.index(endpoint)
+        if path is self.max_path:
+            self.tau = tau
+        return tau
+
+
+    def discrepancy(self, site = None):
+        n = self.size
+        return 2 - abs(self.environment[0][site + n] - self.environment[0][site + n + 1])
 

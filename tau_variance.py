@@ -10,7 +10,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from counter import Counter
 import numpy as np
-import pandas as pd
+from subprocess import call
+import os
+# import pandas as pd 
+# there is no pandas on sphere server
 
 import logging
 
@@ -29,7 +32,7 @@ handler.setFormatter(formatter)
 # add the handlers to the logger
 logger.addHandler(handler)
 
-env = pd.DataFrame()
+# env = pd.DataFrame()
 
 def most_common(lst):
     """return a tuple (most_common_element, count_of_element_in_list)
@@ -66,14 +69,17 @@ def next_run(l, i):
 
 def trial(pol, size, j):
 
-    global env
+    # global env
 
     pol.timevar = None
     pol.make_environment()
     pol.compute_actions()
 
+    records = pol.compute_record_locations()
     path = pol.compute_path()
-    tau = path.index(path[-1])
+    end = pol.compute_endpoint()
+    tau = pol.compute_tau()
+    discr = pol.discrepancy(end)
 
     plt.plot(range(tau), path[:tau])
 
@@ -92,13 +98,13 @@ def trial(pol, size, j):
     #         )
 
 
-    df = pd.DataFrame([ (pol.timevar[i], path[i], pol.spacevar[size+path[i]] ) for i in range(tau)], 
-                        columns = ['time-%s' % (j+1), 'path-%s' % (j+1), 'space-%s' % (j+1) ]  )
+    # df = pd.DataFrame([ (pol.timevar[i], path[i], pol.spacevar[size+path[i]] ) for i in range(tau)], 
+                        # columns = ['time-%s' % (j+1), 'path-%s' % (j+1), 'space-%s' % (j+1) ]  )
 
-    if j == 1:
-        env = df
-    else:
-        env = pd.concat([env, df])
+    # if j == 1:
+    #     env = df
+    # else:
+    #     env = pd.concat([env, df])
 
     # if path[-1] >= 0:
     #     space_series = pd.Series(pol.spacevar[size:path[-1]+size], name = "space")
@@ -116,12 +122,13 @@ def trial(pol, size, j):
 
     
     # This is to find the best entry point to the ending edge:
-    a = max( [ ( pol.action_field[i][size+path[-1]] - i, i ) for i in range(size) ] )[1]
-    logger.info("Tau = %s, Maximizing arrival = %s", tau, a )
+    # a = max( [ ( pol.action_field[i][size+path[-1]] - i, i ) for i in range(size) ] )[1]
+    # logger.info("Tau = %s, Maximizing arrival = %s", tau, a )
 
+    return {"tau": tau, "end": end, "discrepancy": discr, 'action': pol.max_action,
+            "missed_sign": missed_sign, "bad_spots": bad_spots, "records": records}
 
-
-    return tau/float(path[-1]), missed_sign, bad_spots
+    # return tau/float(abs(path[-1])), pol.action_range(0, tau), missed_sign, bad_spots
 
 def runtrials(trials, size):
     runs = 1
@@ -132,27 +139,49 @@ def runtrials(trials, size):
 
     polymer = Polymer(size, logger)
 
+    final_results = {"tau": [], "end": [], "discrepancy": [], 'action': [],
+              "missed_sign": [], "bad_spots": [], "records": []}
+
     # Use just plus or minus 1 as space variables for clearer picture
-    polymer.spacevar = [(-1)**((i % (2*runs)) / runs) * random.uniform(0,1) for i in xrange(2 * size + 1)] 
-    taus = []
-    missed_signs = []
-    bad_spots = []
+    # polymer.spacevar = [(-1)**((i % (2*runs)) / runs) * random.uniform(0,1) for i in xrange(2 * size + 1)] 
+    # taus = []
+    # actions = []
+    # missed_signs = []
+    # bad_spots = []
 
     for j in range(trials):
-        t, m, b = trial(polymer, size, j)
-        taus.append(t)
-        missed_signs.append(m)
-        bad_spots += b
-        bad_spots.sort()
+        # t, a, m, b = trial(polymer, size, j)
+        results = trial(polymer, size, j)
+        for key in final_results:
+            final_results[key].append(results[key])
 
-    env.to_csv('./plots/env.csv')
+    final_results['taus_over_ends'] = [t/abs(float(e)) for t,e in zip(final_results['tau'],final_results['end'])]
+    final_results['taus_over_discrepancies_squared'] = [t*pow(d,-2) for t,d in 
+                                          zip(final_results['tau'],final_results['discrepancy'])]
+
+        # taus.append(t)
+        # actions.append(a)
+        # missed_signs.append(m)
+        # bad_spots += b
+        # bad_spots.sort()
+
+    # env.to_csv('./plots/env.csv')
 
     plt.legend(range(1, trials+1), loc='upper left')
     plt.savefig('./plots/taus:'+str(size)+'-'+str(datetime.now())+'.pdf')
 
+    final_results['avg_tau_over_end'] = average(final_results['taus_over_ends'])
+    final_results['var_tau_over_end'] = variance(final_results['taus_over_ends'], final_results['avg_tau_over_end'])
+    final_results['avg_tau_over_discrepancy_squared'] = average(final_results['taus_over_discrepancies_squared'])
+    final_results['var_tau_over_discrepancy_squared'] = \
+    variance(final_results['taus_over_discrepancies_squared'], final_results['avg_tau_over_discrepancy_squared'])
+    final_results['avg_action'] = average(final_results['action'])
+    final_results['var_action'] = variance(final_results['action'], final_results['avg_action'])
 
-    avg =  sum(taus)/float(len(taus))
-    var = variance(taus, avg)
+    # avg_tau =  average(result[tau])
+    # var_tau = variance(taus, avg_tau)
+    # avg_action = average(actions)
+    # var_action = variance(actions, avg_action)
 
     email_message = ("Program: Variance of taus up to ending edge" +'\n' 
                      "Start: " + str(startTime) + '\n' 
@@ -160,18 +189,56 @@ def runtrials(trials, size):
                      "Runtime: " + str(datetime.now() - startTime) + '\n' 
                      "Size: " + str(size) + '\n' 
                      "Number of Trials: " + str(trials) + '\n' 
-                     "Avg for taus: " + str(avg) +'\n' 
-                     "variance for taus: " + str(var) + '\n' 
-                     "missed_signs: " + str(missed_signs) + '\n'
+                     "Endpoints: {end}" + '\n'
+                     "Avg for tau over end:  {avg_tau_over_end}" +'\n' 
+                     "variance for tau over end:  {var_tau_over_end}" + '\n' 
+                     "Avg for tau over discrepancy squared:  {avg_tau_over_discrepancy_squared}" +'\n' 
+                     "variance for tau over discrepancy squared:  {var_tau_over_discrepancy_squared}" + '\n' 
+                     "Avg for actions:  {avg_action}" + '\n'
+                     "variance for actions:  {var_action}" + '\n'
+                     "missed_signs:  {missed_sign}" + '\n'
+                     ""
                      # "Bad sites: " + str(bad_spots)
-                     )
+                     ).format(**final_results)
 
-    logger.info("Test of string %s, %s", 3, 4)
+    # email_message = ("Program: Variance of taus up to ending edge" +'\n' 
+    #                  "Start: " + str(startTime) + '\n' 
+    #                  "Finish: " + str(datetime.now()) + '\n' 
+    #                  "Runtime: " + str(datetime.now() - startTime) + '\n' 
+    #                  "Size: " + str(size) + '\n' 
+    #                  "Number of Trials: " + str(trials) + '\n' 
+    #                  "Avg for taus: " + str(avg_tau) +'\n' 
+    #                  "variance for taus: " + str(var_tau) + '\n' 
+    #                  "Avg for actions: " + str(avg_action) + '\n'
+    #                  "variance for actions: " + str(var_action) + '\n'
+    #                  "missed_signs: " + str(missed_signs) + '\n'
+    #                  ""
+    #                  # "Bad sites: " + str(bad_spots)
+    #                  )
 
     logger.info(email_message)
+    email(email_message)
+    return results
+
+def email(msg):
+    recipient_email = 'jeremyvoltz@gmail.com'
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    with open('email.txt', 'w') as f:
+        f.write(msg)
+    args = ['mail', '-s', '"tau_variance finished running"', recipient_email, '<', basedir+'/email.txt']
+    str_args = " ".join(args)
+    logger.info(str_args)
+    # call(['mail', '-s', 'tau_variance finished running', recipient_email, ' < ', basedir+'/email.txt'])
+    call(str_args, shell = True)
+
 
 def variance(l, avg):
     return sum([(e - avg) ** 2 for e in l])/float(len(l))
+
+
+def average(l):
+    return sum(l)/float(len(l))
+
 
 if __name__ == '__main__':
     try:
@@ -179,4 +246,3 @@ if __name__ == '__main__':
     except:
         logger.warning(traceback.format_exc())
 
-# cProfile.run(script)
