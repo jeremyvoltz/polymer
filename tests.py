@@ -3,7 +3,7 @@
 import unittest
 import random
 from polymer import Polymer
-from tau_variance import runtrials
+from tau_variance import runtrials, variance, spacevar_typical
 
 def test_pinned_path(n):
     poly = Polymer(n)
@@ -64,14 +64,39 @@ class PolymerTests(unittest.TestCase):
 
     def test_end_discrepancy(self):
         size = 1000
-        exponent = 1/2
+        exponent = 0.5
+        constant = 10
         poly = Polymer(size)
         poly.make_environment()
         poly.compute_actions()
         path = poly.compute_path()
         end = poly.compute_endpoint()
-        self.assertTrue(poly.discrepancy(end) < pow(float(end), -exponent) )
+        self.assertTrue(poly.discrepancy(end) < constant*pow(abs(float(end)), -exponent) )
 
+    def test_typical_omega(self):
+        size = 1000
+        trials = 100
+        threshold = .9
+        count_typical = 0
+        for i in range(trials):
+            poly = Polymer(size)
+            poly.make_environment()
+            count_typical += spacevar_typical(poly)
+        # print count_typical
+        self.assertTrue(count_typical > threshold*trials)
+
+
+    # def test_variance_method(self):
+    #     trials = 1000
+    #     error = .1
+    #     mu = random.uniform(-10,10)
+    #     sigma = random.uniform(0,10)
+    #     var = variance([random.gauss(mu, sigma) for _ in range(trials)])
+    #     self.assertAlmostEqual(sigma, pow(var, 0.5), delta = error)
+
+    # def test_variance_known(self):
+    #     values = [random.choice([-1,1]) for _ in range(30)]
+    #     self.assertAlmostEqual(variance(values, 0), 1)
 
     # Write tests for computing path, endpoint, and tau in wrong orders
 

@@ -173,7 +173,7 @@ def runtrials(trials, size):
 
     # env.to_csv('./plots/env.csv')
 
-    plt.legend(range(1, trials+1), loc='upper left')
+    # plt.legend(range(1, trials+1), loc='upper left')
     plt.savefig('./plots/taus:'+str(size)+'-'+str(datetime.now())+'.pdf')
 
     final_results['avg_tau_over_end'] = average(final_results['taus_over_ends'])
@@ -206,6 +206,7 @@ def runtrials(trials, size):
                      "variance for tau times discrepancy squared:  {var_tau_times_discrepancy_squared}" + '\n' 
                      "Avg for actions:  {avg_action}" + '\n'
                      "variance for actions:  {var_action}" + '\n'
+                     "Actions: {action}"
                      # "missed_signs:  {missed_sign}" + '\n'
                      ""
                      # "Bad sites: " + str(bad_spots)
@@ -223,12 +224,14 @@ def email(msg):
         f.write(msg)
     args = ['mail', '-s', '"tau_variance finished running"', recipient_email, '<', basedir+'/email.txt']
     str_args = " ".join(args)
-    logger.info(str_args)
+    # logger.info(str_args)
     # call(['mail', '-s', 'tau_variance finished running', recipient_email, ' < ', basedir+'/email.txt'])
     call(str_args, shell = True)
 
 
-def variance(l, avg):
+def variance(l, avg = None):
+    if not avg:
+        avg = average(l)
     return sum([(e - avg) ** 2 for e in l])/float(len(l))
 
 
