@@ -157,6 +157,7 @@ def runtrials(trials, size):
 
     for j in range(trials):
         # t, a, m, b = trial(polymer, size, j)
+        logger.info("Trial %s started", j+1)
         results = trial(polymer, size, j)
         for key in final_results:
             final_results[key].append(results[key])
