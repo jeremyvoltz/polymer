@@ -192,6 +192,9 @@ def runtrials(trials, size):
 
     final_results['discrepancy'] = most_common(final_results['discrepancy'])
     final_results['end'] = most_common(final_results['end'])
+    final_results['max_action'] = max(final_results['action'])
+    final_results['min_action'] = min(final_results['action'])
+
 
     email_message = ("Program: Variance of taus up to ending edge" +'\n' 
                      "Start: " + str(startTime) + '\n' 
@@ -207,7 +210,9 @@ def runtrials(trials, size):
                      "variance for tau times discrepancy squared:  {var_tau_times_discrepancy_squared}" + '\n' 
                      "Avg for actions:  {avg_action}" + '\n'
                      "variance for actions:  {var_action}" + '\n'
-                     "Actions: {action}"
+                     "Maximum action: {max_action}" + '\n'
+                     "Minimum action: {min_action}" + '\n'
+                     "Actions: {action}" + '\n'
                      # "missed_signs:  {missed_sign}" + '\n'
                      ""
                      # "Bad sites: " + str(bad_spots)
