@@ -229,7 +229,7 @@ class Polymer(object):
         return zip(range(-n, siterange), occupation)
 
 
-    def compute_record_locations(self): #use discrepancy method
+    def compute_record_discrepancies(self): #use discrepancy method
         n = self.size
         recs = []
         min = 1

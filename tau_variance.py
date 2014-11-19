@@ -75,7 +75,7 @@ def trial(pol, size, j):
     pol.make_environment()
     pol.compute_actions()
 
-    records = pol.compute_record_locations()
+    records = pol.compute_record_discrepancies()
     path = pol.compute_path()
     end = pol.compute_endpoint()
     tau = pol.compute_tau()
@@ -138,6 +138,12 @@ def runtrials(trials, size):
     logger.info("Trials initiated.")
 
     polymer = Polymer(size, logger)
+    polymer.make_environment()
+
+    while not spacevar_typical(polymer):
+        polymer.spacevar = None
+        polymer.timevar = None
+        polymer.make_environment()
 
     final_results = {"tau": [], "end": [], "discrepancy": [], 'action': [],
               "missed_sign": [], "bad_spots": [], "records": []}
@@ -200,7 +206,7 @@ def runtrials(trials, size):
                      "variance for tau times discrepancy squared:  {var_tau_times_discrepancy_squared}" + '\n' 
                      "Avg for actions:  {avg_action}" + '\n'
                      "variance for actions:  {var_action}" + '\n'
-                     "missed_signs:  {missed_sign}" + '\n'
+                     # "missed_signs:  {missed_sign}" + '\n'
                      ""
                      # "Bad sites: " + str(bad_spots)
                      ).format(**final_results)
@@ -208,6 +214,7 @@ def runtrials(trials, size):
     logger.info(email_message)
     email(email_message)
     return results
+
 
 def email(msg):
     recipient_email = 'jeremy@jeremyvoltz.com'
@@ -227,6 +234,12 @@ def variance(l, avg):
 
 def average(l):
     return sum(l)/float(len(l))
+
+
+def spacevar_typical(polymer):
+    eps = .01
+    records = polymer.compute_record_discrepancies()
+    return all([ eps < abs(i)*pow(d,2) < 1/eps for i, d in records if i != 0])
 
 
 if __name__ == '__main__':

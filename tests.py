@@ -21,7 +21,7 @@ def test__path(n):
     poly.make_environment()
     poly.compute_actions()
     poly.compute_path()
-    poly.compute_record_locations()
+    poly.compute_record_discrepancies()
     poly.records
     for i in range(n+1):
         try:
